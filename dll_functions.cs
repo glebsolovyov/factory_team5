@@ -6,8 +6,134 @@ using System.Globalization;
 
 namespace factory_team5
 {
-    public class DllFunctionsCreate{
+    public class DllAuth
+    {
+        public static (bool superuser, bool log, string id, string workshop_id) login()
+        {
 
+            XDocument xdoc = XDocument.Load("auth_users.xml");
+            bool b = true, c = true, x = true;
+            int count = 0, auth_value = 0;
+            string id = "", workshop_id = "";
+            bool superuser = false;
+            while (x)
+            {
+                XDocument xdoc1 = XDocument.Load("last_auth_user.xml");
+                foreach (XElement xel in xdoc1.Element("last_user").Elements("user"))
+                {
+                    count++;
+                    try
+                    {
+                        id = xel.Element("id").Value;
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                }
+
+                if (count > 0)
+                {
+
+                    Console.WriteLine($"Здравствуйте {xdoc1.Element("last_user").Element("user").Element("login").Value}! Войти в этот аккаунт /1 или в другой /2 ?");
+                    try
+                    {
+                        auth_value = Convert.ToInt32(Console.ReadLine());
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Некорректный ввод. Попробуйте еще раз\n");
+                        continue;
+                    }
+                    if (auth_value == 1)
+                    {
+                        while (c)
+                        {
+                            Console.WriteLine("Введите пароль");
+                            string password = Console.ReadLine();
+                            foreach (XElement xel in xdoc.Element("users").Elements("user"))
+                            {
+                                if (xel.Attribute("id").Value == id & xel.Element("password").Value == password)
+                                {
+                                    c = false;
+                                    if (password == "superuser") superuser = true;
+                                    x = false;
+                                    workshop_id = xel.Element("workshop_id").Value;
+                                    return (superuser, true, id, workshop_id);
+                                }
+                            }
+                            if (c == true) Console.WriteLine("Пароль введен неправильно. Попробуйте еще раз");
+                        }
+                    }
+                    else if (auth_value == 2)
+                    {
+                        logout();
+                        count = 0;
+                        continue;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Некорректный ввод. Попробуйте еще раз\n");
+                        continue;
+                    }
+                }
+                else
+                {
+                    while (b)
+                    {
+                        Console.WriteLine("Введите логин");
+                        string login = Console.ReadLine().ToLower();
+                        foreach (XElement xel in xdoc.Element("users").Elements("user"))
+                        {
+                            if (xel.Element("login").Value.ToLower() == login)
+                            {
+                                id = xel.Attribute("id").Value;
+                                xdoc1.Element("last_user").Add(new XElement("user",
+                                                                new XElement("login", login),
+                                                                new XElement("id", id)));
+                                xdoc1.Save("last_auth_user.xml");
+                                b = false;
+                                if (login == "superuser") superuser = true;
+                            }
+                        }
+                        if (b == true) Console.WriteLine("Логин введен неправильно. Попробуйте еще раз");
+                        while (c)
+                        {
+                            Console.WriteLine("Введите пароль");
+                            string password = Console.ReadLine();
+                            foreach (XElement xel in xdoc.Element("users").Elements("user"))
+                            {
+                                if (xel.Attribute("id").Value == id & xel.Element("password").Value == password)
+                                {
+                                    c = false;
+                                    if (password == "superuser") superuser = true;
+                                    x = false;
+                                    workshop_id = xel.Element("workshop_id").Value;
+                                    return (superuser, true, id, workshop_id); ;
+                                }
+                            }
+                            if (c == true) Console.WriteLine("Пароль введен неправильно. Попробуйте еще раз");
+                        }
+                        break;
+                    }
+                }
+
+            }
+            return (superuser, false, id, workshop_id);
+        }
+
+
+        public static void logout()
+        {
+            XDocument xdoc = XDocument.Load("last_auth_user.xml");
+            xdoc.Element("last_user").Element("user").Remove();
+            xdoc.Save("last_auth_user.xml");
+        }
+    }
+    public class DllFunctionsCreate
+    {
+
+        //Функция для проверки ввода айди/номера
         public static (string exept, int number) check_number(string id, string type, string id1, string nnew = "")
         {
             int number = 0;
@@ -21,7 +147,7 @@ namespace factory_team5
                     Console.WriteLine($"Введите {nnew}{id} {type}: ");
                     number = Convert.ToInt32(Console.ReadLine());
                     exept = "";
-                    if (number != 0) b = false; 
+                    if (number != 0) b = false;
                 }
                 catch (Exception e)
                 {
@@ -33,18 +159,21 @@ namespace factory_team5
             var result = (exept, number);
             return result;
         }
-        public static int get_id(string path, string root_el, string el){
+        public static int get_id(string path, string root_el, string el)
+        {
             XDocument xdoc = XDocument.Load(path);
             XElement lastElement = xdoc.Element(root_el).Elements(el).ToList().Last();
-            return Convert.ToInt32(lastElement.Attribute("id").Value) + 1; 
-        } 
+            return Convert.ToInt32(lastElement.Attribute("id").Value) + 1;
+        }
 
-        public static void create_workshop(){
+        public static void create_workshop()
+        {
             XDocument xdoc = XDocument.Load("workshops.xml");
             XElement workshops = xdoc.Element("workshops");
             bool b = true;
+            // проверка ввода и получение номера цеха
             int number = check_number("номер", "цеха", "номера").number;
-            
+
             Console.WriteLine("Введите тип продукта");
             string type = Console.ReadLine();
             workshops.Add(new XElement("workshop",
@@ -54,7 +183,8 @@ namespace factory_team5
             Console.WriteLine("Успешно");
         }
 
-        public static void create_staff() {
+        public static void create_staff()
+        {
             XDocument xdoc_workshops = XDocument.Load("workshops.xml");
 
             XDocument xdoc_staff = XDocument.Load("staff.xml");
@@ -63,10 +193,9 @@ namespace factory_team5
             bool b = true, c = true;
             string fullname = "";
             var birthday = "";
-            int number = 0;
-            string exept = "";
-
-            while (b) {
+            //цикл, в котором проевряется правильность ввода и наличия цеха в xml
+            while (b)
+            {
                 Console.WriteLine("Введите ФИО: ");
                 fullname = Console.ReadLine();
 
@@ -99,8 +228,8 @@ namespace factory_team5
                     }
                 }
                 while (c);
-                }
-          
+            }
+
         }
         public static void create_product()
         {
@@ -110,9 +239,10 @@ namespace factory_team5
             bool b = true, c = true;
             Console.WriteLine("Введите наименование продукции");
             string name = Console.ReadLine();
-            Console.WriteLine("Введите тип продукции"); 
+            Console.WriteLine("Введите тип продукции");
             string type = Console.ReadLine();
             string employee_fullname = "";
+            // цикл с проверкой на наличие сотрудника в xml
             while (b)
             {
                 Console.WriteLine("Введите ФИО сотрудника выпустившего продукцию");
@@ -123,30 +253,33 @@ namespace factory_team5
                     {
                         employee_fullname = xel.Element("fullname").Value;
                         c = true;
-                        b = false;
+                        b = false; 
                         break;
                     }
                     else { b = true; c = false; }
                 }
                 if (!c) { Console.WriteLine("Сотрудник не найден"); }
             }
-            Console.WriteLine("Введите серийный номер продукции");
-            string serial_number = "SNP" + Console.ReadLine();
+            var num_exept = check_number("серийный номер", "продукции", "серийного номера");
+            string serial_number = "SNP" + Convert.ToString(num_exept.number);
             DateTime dt = new DateTime();
             dt = DateTime.Now;
             string dt_day = Convert.ToString(dt.Day);
-            string dt_month = Convert.ToString(dt.Month); 
-            if (dt.Month < 10 & dt.Day < 10){
+            string dt_month = Convert.ToString(dt.Month);
+            if (dt.Month < 10 & dt.Day < 10)
+            {
                 dt_day = "0" + dt_day;
                 dt_month = "0" + dt_month;
             }
-            else if (dt.Month < 10){
+            else if (dt.Month < 10)
+            {
                 dt_month = "0" + dt_month;
             }
-            else if(dt.Day < 10){
+            else if (dt.Day < 10)
+            {
                 dt_day = "0" + dt_day;
             }
-            string date = Convert.ToString(dt_day) + "." + Convert.ToString(dt_month) + "." + Convert.ToString(dt.Year) 
+            string date = Convert.ToString(dt_day) + "." + Convert.ToString(dt_month) + "." + Convert.ToString(dt.Year)
                         + " " + Convert.ToString(dt.Hour) + ":" + Convert.ToString(dt.Minute) + ":" + Convert.ToString(dt.Second);
             products.Add(new XElement("product",
                             new XAttribute("id", get_id("products.xml", "products", "product")),
@@ -158,7 +291,7 @@ namespace factory_team5
             xdoc.Save("products.xml");
 
         }
-  
+
     }
     public class DllFunctionUpdate
     {
@@ -168,7 +301,7 @@ namespace factory_team5
             XDocument xdoc_workshops = XDocument.Load("workshops.xml");
             DllInfo.get_info("staff.xml", "staff", "worker");
             bool b = true, c = true, k = true;
-
+            //  цикл do while в котором проверяется наличие сотрудника в xml
             do
             {
                 var num_exept_for_id = DllFunctionsCreate.check_number("ID", "сотрудника", "id");
@@ -176,6 +309,7 @@ namespace factory_team5
                 {
                     if (Convert.ToInt32(staffElement.Attribute("id").Value) == num_exept_for_id.number)
                     {
+                        // цикл while в котором проверяется наличие введенного цеха в xml
                         while (k)
                         {
                             c = false;
@@ -214,15 +348,16 @@ namespace factory_team5
 
         }
     }
-    
+
 
     public class DllInfo
     {
+        // метод для оторбражения кол-ва выпущенной продукции за все время
         public static int product_count()
         {
             int count = 0;
             XDocument xdoc = XDocument.Load("products.xml");
-            foreach(XElement xel in xdoc.Element("products").Elements("product"))
+            foreach (XElement xel in xdoc.Element("products").Elements("product"))
             {
                 count++;
             }
@@ -248,42 +383,101 @@ namespace factory_team5
         public static void factory_statistics()
         {
             XDocument xdoc = XDocument.Load("products.xml");
-            bool b = true;
-            while(b){
-            Console.WriteLine("Выберите в каком формате вы хотите посмотреть статистику\nДата 1\n Диапазон дат 2\n Вся статистика 3\n В главное меню 4");
-            int value = Convert.ToInt32(Console.ReadLine());
-            switch(value){
-                case 1:
-                    Console.WriteLine("Введите дату: ");
-                    var date = Convert.ToString(inputDate()).Substring(0, 10);
-                    foreach (XElement xel in xdoc.Element("products").Elements("product")){
-                        if(date == Convert.ToString(xel.Element("date")).Substring(6, 10)){
+            bool b = true, c = true;
+            while (b)
+            {
+                Console.WriteLine("Выберите в каком формате вы хотите посмотреть статистику\nДата 1\nДиапазон дат 2\nВся статистика 3\nСтатистика по цехам 4\n");
+                int value = Convert.ToInt32(Console.ReadLine());
+                switch (value)
+                {
+                    case 1:
+                        Console.WriteLine("Введите дату: ");
+                        var date = Convert.ToString(inputDate()).Substring(0, 10);
+                        foreach (XElement xel in xdoc.Element("products").Elements("product"))
+                        {
+                            if (date == Convert.ToString(xel.Element("date")).Substring(6, 10))
+                            {
+                                worker_output(xel);
+                            }
+                        }
+                        break;
+                    case 2:
+                        Console.WriteLine("Введите 1 дату: ");
+                        var date1 = inputDate();
+                        Console.WriteLine("Введите 2 дату: ");
+                        var date2 = inputDate();
+                        foreach (XElement xel in xdoc.Element("products").Elements("product"))
+                        {
+                            if (date1 <= DateTime.Parse(Convert.ToString(xel.Element("date")).Substring(6, 10)) & date2 >= DateTime.Parse(Convert.ToString(xel.Element("date")).Substring(6, 10)))
+                            {
+                                worker_output(xel);
+                            }
+                        }
+                        break;
+                    case 3:
+                        foreach (XElement xel in xdoc.Element("products").Elements("product"))
+                        {
                             worker_output(xel);
                         }
-                    }
-                    break;
-                case 2:
-                    Console.WriteLine("Введите 1 дату: ");
-                    var date1 = inputDate();
-                    Console.WriteLine("Введите 2 дату: ");
-                    var date2 = inputDate();
-                    foreach(XElement xel in xdoc.Element("products").Elements("product")){
-                        if(date1 <= DateTime.Parse(Convert.ToString(xel.Element("date")).Substring(6, 10)) & date2 >= DateTime.Parse(Convert.ToString(xel.Element("date")).Substring(6, 10))){
-                            worker_output(xel);
+                        break;
+                    case 4:
+                        XDocument workshops = XDocument.Load("workshops.xml");
+                        XDocument staff = XDocument.Load("staff.xml");
+                        XDocument products = XDocument.Load("products.xml");
+                        while (c)
+                        {
+                            var num_exept = DllFunctionsCreate.check_number("номер", "цеха", "номера");
+
+                            var workshop = workshops.Descendants("workshop")
+                                .FirstOrDefault(w => Convert.ToInt32(w.Attribute("id").Value) == num_exept.number);
+
+                            if (workshop == null)
+                            {
+                                Console.WriteLine($"Цех с номером {num_exept.number} не найден.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Статистика по цеху: {workshop.Element("type").Value}");
+
+                                var workersInW = staff.Descendants("worker")
+                                    .Where(w => w.Element("number").Value == workshop.Attribute("id").Value);
+
+                                foreach (var worker in workersInW)
+                                {
+                                    Console.WriteLine($"Работник: {worker.Element("fullname").Value}");
+
+                                    //var productsInW = products.Descendants("product")
+                                    //    .Where(p => p.Element("employee_fullname").Value == worker.Element("fullname").Value &&
+                                    //                p.Element("type").Value == workshop.Element("type").Value);
+
+                                    int productCount = 0;
+                                    foreach (var product in products.Element("products").Elements("product"))
+                                    {
+                                        if (product.Element("employee_fullname").Value == worker.Element("fullname").Value)
+                                        {
+                                            Console.WriteLine($"Продукт: {product.Element("name").Value}");
+
+                                            productCount++;
+                                            c = true;
+                                        }
+                                    }
+                                    if (c)
+                                    {
+                                        Console.WriteLine($"Выпущено продуктов: {productCount}");
+                                        Console.WriteLine();
+                                        c = false;
+                                    }
+                                }
+                            }
                         }
-                    }
-                    break;
-                case 3:
-                    foreach(XElement xel in xdoc.Element("products").Elements("product")){
-                        worker_output(xel);
-                    }
-                    break;
-                case 4:
-                    b = false;
-                    break;
-                default:
-                    Console.WriteLine("Неправильный ввод");
-                    break;
+                        break;
+
+                    case 0:
+                        b = false;
+                        break;
+                    default:
+                        Console.WriteLine("Неправильный ввод");
+                        break;
                 }
             }
 
@@ -291,29 +485,32 @@ namespace factory_team5
         public static void get_info(string path, string root_el, string el)
         {
             XDocument xdoc = XDocument.Load(path);
-            
-            foreach(XElement xel in xdoc.Element(root_el).Elements(el))
+
+            foreach (XElement xel in xdoc.Element(root_el).Elements(el))
             {
-                if(path == "staff.xml"){
-                Console.WriteLine($"ID: {xel.Attribute("id").Value}");
-                Console.WriteLine($"ФИО: {xel.Element("fullname").Value}");
-                Console.WriteLine($"День рождения: {xel.Element("birthday").Value}");
-                Console.WriteLine($"Номер цеха, в котором работает сотрудник: {xel.Element("number").Value}");
+                if (path == "staff.xml")
+                {
+                    Console.WriteLine($"ID: {xel.Attribute("id").Value}");
+                    Console.WriteLine($"ФИО: {xel.Element("fullname").Value}");
+                    Console.WriteLine($"День рождения: {xel.Element("birthday").Value}");
+                    Console.WriteLine($"Номер цеха, в котором работает сотрудник: {xel.Element("number").Value}");
                 }
-                else if(path == "products.xml")
+                else if (path == "products.xml")
                 {
                     worker_output(xel);
                 }
-                else if(path == "workshops.xml")
+                else if (path == "workshops.xml")
                 {
                     Console.WriteLine($"Номер цеха: {xel.Attribute("id").Value}");
                     Console.WriteLine($"Тип выпускаемой продукции: {xel.Element("type").Value}");
                 }
             }
         }
-        public static void get_info_about_product(){
+        public static void get_info_about_product()
+        {
             XDocument xdoc = XDocument.Load("products.xml");
             bool c = true, b = true;
+            // цикл для проверки наличия введенного серийного номера продукта в xml
             while (c)
             {
                 Console.WriteLine("Введите серийный номер продукта: ");
@@ -331,10 +528,12 @@ namespace factory_team5
                 if (b) Console.WriteLine("Результаты не найдены");
             }
         }
-        public static void get_info_about_worker(){
+        public static void get_info_about_worker()
+        {
             XDocument xdoc = XDocument.Load("products.xml");
 
             bool b = true, c = true;
+            // цикл в котором проверяется наличие сотрудника в xml
             while (c)
             {
                 Console.WriteLine("Введите ФИО сотрудника");
@@ -352,7 +551,8 @@ namespace factory_team5
                 if (b) Console.WriteLine("Результаты не найдены. Попробуйте еще раз");
             }
         }
-        public static void worker_output(XElement xel){
+        public static void worker_output(XElement xel)
+        {
             XDocument xdoc = XDocument.Load("products.xml");
             Console.WriteLine($"ID: {xel.Attribute("id").Value}");
             Console.WriteLine($"Наименование продукции: {xel.Element("name").Value}");
@@ -364,11 +564,13 @@ namespace factory_team5
     }
     public class DllDelete
     {
-        public static void delete_staff(){
+        public static void delete_staff()
+        {
             DllInfo.get_info("staff.xml", "staff", "worker");
             XDocument xdoc_delete = XDocument.Load("deleted_staff.xml");
             XDocument xdoc = XDocument.Load("staff.xml");
             bool b = true;
+            // цикл в котором проверяется наличие сотрудника в xml
             while (b)
             {
                 var num_exept = DllFunctionsCreate.check_number("ID", "сотрудника", "ID");
@@ -398,6 +600,7 @@ namespace factory_team5
             XDocument xdoc = XDocument.Load("workshops.xml");
             XDocument xdoc_delete = XDocument.Load("deleted_workshops.xml");
             bool b = true;
+            // цикл в котором проверяется наличие цеха в xml
             while (b)
             {
                 var num_exept = DllFunctionsCreate.check_number("номер", "цеха", "номера");
@@ -419,5 +622,142 @@ namespace factory_team5
                 if (b & num_exept.exept == "") Console.WriteLine("Такого завода нет");
             }
         }
-    } 
+    }
+    public class DllMenu
+    {
+        public static (bool, bool) superuser_panel()
+        {
+            bool c = true, x = false;
+            while (c)
+            {
+                Console.WriteLine($"На данный момент заводом выпущено {DllInfo.product_count()} единиц продукции\n");
+                bool b = true;
+                while (b)
+                {
+                    Console.WriteLine("Добавить работника  /1");
+                    Console.WriteLine("Добавить цех /2");
+                    Console.WriteLine("Редактировать данные о сотруднике /3");
+                    Console.WriteLine("Добавить данные о выпущенной продукции завода /4");
+                    Console.WriteLine("Поиск продукции по серийному номеру /5");
+                    Console.WriteLine("Просмотреть статистику о сотруднике /6");
+                    Console.WriteLine("Посмотреть статистику завода /7");
+                    Console.WriteLine("Удалить сотрудника /8");
+                    Console.WriteLine("Удалить цех /9");
+                    Console.WriteLine("Выйти из аккаунта /10");
+                    Console.WriteLine("Выйти из программы /0");
+                    int menu_value = 0;
+                    try
+                    {
+                        menu_value = Convert.ToInt32(Console.ReadLine());
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("\nНекорректный ввод. Попробуйте еще раз\n");
+                        continue;
+                    }
+                    switch (menu_value)
+                    {
+                        case 1:
+                            DllFunctionsCreate.create_staff();
+                            continue;
+                        case 2:
+                            DllFunctionsCreate.create_workshop();
+                            continue;
+                        case 3:
+                            DllFunctionUpdate.update_staff();
+                            continue;
+                        case 4:
+                            DllFunctionsCreate.create_product();
+                            continue;
+                        case 5:
+                            DllInfo.get_info_about_product();
+                            continue;
+                        case 6:
+                            DllInfo.get_info_about_worker();
+                            continue;
+                        case 7:
+                            DllInfo.factory_statistics();
+                            continue;
+                        case 8:
+                            DllDelete.delete_staff();
+                            continue;
+                        case 9:
+                            DllDelete.delete_workshop();
+                            continue;
+                        case 10:
+                            DllAuth.logout();
+                            b = false;
+                            c = false;
+                            break;
+                        case 0:
+                            b = false;
+                            c = false;
+                            x = true;
+                            break;
+                        default:
+                            Console.WriteLine("\nНекорректный ввод. Попробуйте еще раз\n");
+                            continue;
+                    }
+                }
+            }
+            return (false, x);
+        }
+        public static (bool, bool) admin_panel()
+        {
+            bool c = true, x = false;
+            while (c)
+            {
+                Console.WriteLine($"На данный момент заводом выпущено {DllInfo.product_count()} единиц продукции\n");
+                bool b = true;
+                while (b)
+                {
+                    Console.WriteLine("Добавить данные о выпущенной продукции завода /1");
+                    Console.WriteLine("Поиск продукции по серийному номеру /2");
+                    Console.WriteLine("Просмотреть статистику о сотруднике /3");
+                    Console.WriteLine("Посмотреть статистику завода /4");
+                    Console.WriteLine("Выйти из аккаунта /5");
+                    Console.WriteLine("Выйти из программы /0");
+                    int menu_value = 0;
+                    try
+                    {
+                        menu_value = Convert.ToInt32(Console.ReadLine());
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("\nНекорректный ввод. Попробуйте еще раз\n");
+                        continue;
+                    }
+                    switch (menu_value)
+                    {
+                        case 1:
+                            DllFunctionsCreate.create_product();
+                            continue;
+                        case 2:
+                            DllInfo.get_info_about_product();
+                            continue;
+                        case 3:
+                            DllInfo.get_info_about_worker();
+                            continue;
+                        case 4:
+                            DllInfo.factory_statistics();
+                            continue;
+                        case 5:
+                            DllAuth.logout();
+                            b = false;
+                            c = false;
+                            continue;
+                        case 0:
+                            b = false;
+                            c = false;
+                            x = true;
+                            break;
+                        default:
+                            Console.WriteLine("\nНекорректный ввод. Попробуйте еще раз\n");
+                            continue;
+                    }
+                }
+            }
+            return (false, x);
+        }
+    }
 }
