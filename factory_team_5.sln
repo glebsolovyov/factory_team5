@@ -12,6 +12,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xml", "xml", "{CF73A376-3FA2-436B-8D47-5008FB86A1C6}"
 	ProjectSection(SolutionItems) = preProject
 		bin\Debug\auth_users.xml = bin\Debug\auth_users.xml
+		bin\Debug\color.xml = bin\Debug\color.xml
+		bin\Debug\defective_products.xml = bin\Debug\defective_products.xml
 		bin\Debug\deleted_staff.xml = bin\Debug\deleted_staff.xml
 		bin\Debug\deleted_workshops.xml = bin\Debug\deleted_workshops.xml
 		bin\Debug\last_auth_user.xml = bin\Debug\last_auth_user.xml

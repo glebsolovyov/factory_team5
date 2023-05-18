@@ -7,6 +7,7 @@ namespace factory_team5
     {
         static void Main(string[] args)
         {
+            DllColor.LoadColorSettings();
             bool b = true;
             while (b)
             {
@@ -14,7 +15,7 @@ namespace factory_team5
                 Console.WriteLine(data);
                 if (data.superuser)
                 {
-                    var result = DllMenu.superuser_panel();
+                    var result = DllMenu.superuser_panel(data.superuser, data.workshop_id);
                     if (result.Item2)
                     {
                         break;
@@ -26,7 +27,7 @@ namespace factory_team5
                 }
                 else
                 {
-                    var result = DllMenu.admin_panel();
+                    var result = DllMenu.admin_panel(data.superuser, data.workshop_id);
                     if (result.Item2)
                     {
                         break;
